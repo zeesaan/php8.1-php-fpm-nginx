@@ -85,6 +85,7 @@ sudo sed -E -i 's/upload_max_filesize = .*/upload_max_filesize = 3G/' $PHP_INI
 sudo sed -E -i 's/post_max_size = .*/post_max_size = 1G/' $PHP_INI
 sudo sed -E -i 's/memory_limit = .*/memory_limit = 4G/' $PHP_INI
 sudo sed -E -i 's/max_input_time = .*/max_input_time = 120/' $PHP_INI
+sudo sed -E -i 's/max_execution_time = .*/max_execution_time = 300/' $PHP_INI
 
 # Restart PHP-FPM to apply changes
 echo "Restarting PHP-FPM service..."
