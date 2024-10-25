@@ -12,6 +12,10 @@ PHP_INI="/etc/php/8.1/fpm/php.ini"
 echo "Updating and upgrading the system..."
 sudo apt update && sudo apt upgrade -y
 
+# Install Nginx
+echo "Installing Nginx..."
+sudo apt install -y nginx
+
 # Install PHP 8.1 and PHP-FPM
 echo "Adding PHP repository..."
 sudo add-apt-repository ppa:ondrej/php -y
@@ -25,59 +29,26 @@ echo "Starting PHP-FPM service..."
 sudo systemctl start php8.1-fpm
 sudo systemctl enable php8.1-fpm
 
-# Install Nginx
-echo "Installing Nginx..."
-sudo apt install nginx -y
+# Install MySQL Client
+echo "Installing MySQL client..."
+sudo apt install -y mysql-client
 
-# Start and Enable Nginx
-echo "Starting Nginx service..."
-sudo systemctl start nginx
-sudo systemctl enable nginx
+# Install Node.js 20
+echo "Installing Node.js 20..."
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
 
-# Configure Nginx
-echo "Configuring Nginx for $DOMAIN..."
-sudo mkdir -p $WEB_ROOT
-sudo tee /etc/nginx/sites-available/$DOMAIN <<EOF
-server {
-    listen 80;
-    server_name $DOMAIN www.$DOMAIN;
+# Install PM2
+echo "Installing PM2..."
+sudo npm install -g pm2
 
-    root $WEB_ROOT;
-    index index.php index.html index.htm;
+# Run Composer Install
+echo "Installing Composer..."
+curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
 
-    location / {
-        try_files \$uri \$uri/ /index.php?\$query_string;
-    }
-
-    location ~ \.php$ {
-        include snippets/fastcgi-php.conf;
-        fastcgi_pass unix:/run/php/php8.1-fpm.sock;
-        fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
-        include fastcgi_params;
-    }
-
-    location ~ /\.ht {
-        deny all;
-    }
-}
-EOF
-
-# Enable the Server Block
-echo "Enabling the server block..."
-sudo ln -s /etc/nginx/sites-available/$DOMAIN /etc/nginx/sites-enabled/
-
-# Test Nginx Configuration
-echo "Testing Nginx configuration..."
-sudo nginx -t
-
-# Reload Nginx
-echo "Reloading Nginx..."
-sudo systemctl reload nginx
-
-# Set Permissions
-echo "Setting permissions for $WEB_ROOT..."
-sudo chown -R www-data:www-data /var/www/$DOMAIN
-sudo chmod -R 755 /var/www/$DOMAIN
+# Install Imagick
+echo "Installing Imagick extension for PHP 8.1..."
+sudo apt install -y php-imagick
 
 # Update php.ini settings
 echo "Updating PHP configuration in $PHP_INI..."
@@ -88,7 +59,14 @@ sudo sed -E -i 's/max_input_time = .*/max_input_time = 120/' $PHP_INI
 sudo sed -E -i 's/max_execution_time = .*/max_execution_time = 300/' $PHP_INI
 
 # Restart PHP-FPM to apply changes
-echo "Restarting PHP-FPM service..."
+echo "Restarting PHP-FPM service to apply Imagick extension..."
 sudo systemctl restart php8.1-fpm
+
+# Verification step
+if php -m | grep -q 'imagick'; then
+    echo "Imagick installation verified successfully!"
+else
+    echo "Imagick installation failed or is not enabled."
+fi
 
 echo "Installation and configuration completed successfully!"
